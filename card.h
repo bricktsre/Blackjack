@@ -8,4 +8,6 @@ typedef struct {
 	char     name[10];
 }Card;
 
+void print_card(Card c);
+
 #endif /** _CARD_H_ **/

@@ -7,9 +7,11 @@
 #include "common.h"
 
 Shoe* create_shoe(uint32_t num_decks) {
-	Shoe* s = malloc(sizeof(Shoe) + (num_decks * 52 * sizeof(Card)));
-	if (!s)
-		printf("Error on malloc for Shoe\n");
+	Shoe* s = calloc(1, sizeof(Shoe) + (num_decks * 52 * sizeof(Card)));
+	if (!s) {
+		printf("Error on calloc for Shoe\n");
+		return NULL;
+	}
 	
 	s->next_card = 0;	
 	s->orig_size = num_decks * 52;
@@ -63,4 +65,11 @@ Card* get_next_card(Shoe *s) {
 	
 	s->curr_size--;
 	return &(s->cards[s->next_card++]);
+}
+
+float get_penetration(Shoe *s) {
+	if (s->orig_size == 0)
+		return -1;
+
+	return s->curr_size / (float)s->orig_size;
 }

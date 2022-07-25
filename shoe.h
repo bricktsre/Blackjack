@@ -23,4 +23,6 @@ void shuffle_shoe(Shoe *s);
 
 Card* get_next_card(Shoe *s);
 
+float get_penetration(Shoe *s);
+
 #endif /** _SHOE_H_ **/

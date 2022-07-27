@@ -12,23 +12,28 @@
 #define PLAYER_INPUT_SIZE 10
 
 typedef struct {
-	Hand  *hand;
+	Hand  *hands[4];
+	size_t numHands;
 	float  money;
 }Player;
 
 int main(int argc, char *argv[]) {
-	size_t iter = 0;
+	size_t playerIter = 0;
+	size_t handIter   = 0;
 	
 	srand(time(0));
 
 	Shoe* shoe = create_shoe(2);
 	shuffle_shoe(shoe);
 
-	size_t numPlayers = 1;	
+	size_t numPlayers = 1;
+	size_t maxHands = 4;	
 	Player players[numPlayers];
-	for (iter = 0; iter < numPlayers; iter++) {
-		players[iter].hand = create_hand();
-		players[iter].money = 100;
+	for (playerIter = 0; playerIter < numPlayers; playerIter++) {
+		for(handIter = 0; handIter < maxHands; handIter++) 
+			players[playerIter].hands[handIter] = create_hand();
+		players[playerIter].numHands = 1;
+		players[playerIter].money = 100;
 	}
 
 	Hand *dealerHand = create_hand();
@@ -38,8 +43,8 @@ int main(int argc, char *argv[]) {
 
 	puts("Welcome to Blackjack!\n");	
 	while (get_penetration(shoe) >= 0.2) {
-		for (iter = 0; iter < numPlayers; iter++) {
-			printf("Your money: %.2f\n", players[iter].money);
+		for (playerIter = 0; playerIter < numPlayers; playerIter++) {
+			printf("Player %ld's money: %.2f\n", playerIter + 1, players[playerIter].money);
 			puts("How much would you like to bet?");
 			while (1) {
 				if (fgets(playerInput, PLAYER_INPUT_SIZE-1, stdin) != NULL) {
@@ -50,12 +55,12 @@ int main(int argc, char *argv[]) {
 					}
 					
 					if (pWager < 0 || (pWager % 5 != 0))
-						puts("Wager must be 5, 10, 25, 50, or 100");
-					else if (pWager > players[iter].money)
+						puts("Wager must be a multiple of 5");
+					else if (pWager > players[playerIter].money)
 						puts("Can't bet more than you have!");
 					else {
-						players[iter].hand->wager += pWager;
-						players[iter].money -= pWager;
+						players[playerIter].hands[0]->wager += pWager;
+						players[playerIter].money -= pWager;
 						break;
 					}
 				}
@@ -70,21 +75,22 @@ int main(int argc, char *argv[]) {
 		int roundOver = 0;
 		int reprint = 0;	
 
-		for (iter = 0; iter < numPlayers; iter++) {
-			add_card(players[iter].hand, get_next_card(shoe));
-       			add_card(players[iter].hand, get_next_card(shoe));
-			printf("Player %ld's hand: ", iter + 1);
-			print_hand(players[iter].hand);	
-			printf("Status: %2.2x\n",players[iter].hand->status);
+		for (playerIter = 0; playerIter < numPlayers; playerIter++) {
+			players[playerIter].numHands = 1;
+			add_card(players[playerIter].hands[0], get_next_card(shoe));
+       			add_card(players[playerIter].hands[0], get_next_card(shoe));
+			printf("Player %ld's hand: ", playerIter + 1);
+			print_hand(players[playerIter].hands[0]);	
+			//printf("Status: %2.2x\n",players[playerIter].hands[0]->status);
 		}
 		
 		if (dealerHand->hand[0]->value == 11) {
 			// Insurance and Even money
 			if (dealerHand->count == 21) {
-				for (iter = 0; iter < numPlayers; iter++) {
-					if (players[iter].hand->count == 21) {
-						players[iter].money += players[iter].hand->count;
-						clean_hand(players[iter].hand);	
+				for (playerIter = 0; playerIter < numPlayers; playerIter++) {
+					if (players[playerIter].hands[0]->count == 21) {
+						players[playerIter].money += players[playerIter].hands[0]->count;
+						clean_hand(players[playerIter].hands[0]);	
 					}
 				}
 				roundOver = 1;
@@ -92,89 +98,105 @@ int main(int argc, char *argv[]) {
 		}
 
 		// Each player plays till bust or stand
-		for (iter = 0; iter < numPlayers; iter++) {
+		for (playerIter = 0; playerIter < numPlayers; playerIter++) {
 			if (roundOver)
 				break;
+			for (handIter = 0; handIter < players[playerIter].numHands; handIter++) {
+				while (!(players[playerIter].hands[handIter]->status & 0x13)) {
+					if (players[playerIter].hands[handIter]->status == 0)
+						puts("(H)it or (S)tand?");
+					else {
+						printf("(H)it, (S)tand, ");
+						if (players[playerIter].hands[handIter]->status & 0x28)
+							puts("(D)ouble down, or S(u)rrender?");
+					}
 
-			while (!(players[iter].hand->status & 0x13)) {
-				if (players[iter].hand->status == 0)
-					puts("(H)it or (S)tand?");
-				else {
-					printf("(H)it, (S)tand, ");
-					if (players[iter].hand->status & 0x08)
-						puts("or (D)ouble down?");
-				}
-
-				memset(playerInput, 0, sizeof(playerInput));
-				if (fgets(playerInput, PLAYER_INPUT_SIZE-1, stdin) != NULL) {
-					char c = playerInput[iter];
-					if (c == 'H' || c == 'h') {
-						add_card(players[iter].hand, get_next_card(shoe));
-						reprint = 1;
-					} else if (c == 'S' || c == 's') {
-						players[iter].hand->status |= 0x10;
-					} else if ((c == 'D' || c == 'd') && (players[iter].hand->status & 0x08)) {
-						if (players[iter].money >= players[iter].hand->wager) {
-							players[iter].money -= players[iter].hand->wager;
-							players[iter].hand->wager *= 2;
-							add_card(players[iter].hand, get_next_card(shoe));
-							players[iter].hand->status |= 0x10;
+					memset(playerInput, 0, sizeof(playerInput));
+					if (fgets(playerInput, PLAYER_INPUT_SIZE-1, stdin) != NULL) {
+						char c = playerInput[0];
+						if (c == 'H' || c == 'h') {
+							add_card(players[playerIter].hands[handIter], get_next_card(shoe));
 							reprint = 1;
-							
-						} else
+						} else if (c == 'S' || c == 's') {
+							players[playerIter].hands[handIter]->status |= 0x10;
+						} else if (c == 'U' || c == 'u') {
+							players[playerIter].money += players[playerIter].hands[handIter]->wager * 0.5;
+							clean_hand(players[playerIter].hands[handIter]);
+							break;
+						}else if ((c == 'D' || c == 'd') && (players[playerIter].hands[handIter]->status & 0x08)) {
+							if (players[playerIter].money >= players[playerIter].hands[handIter]->wager) {
+								players[playerIter].money -= players[playerIter].hands[handIter]->wager;
+								players[playerIter].hands[handIter]->wager *= 2;
+								add_card(players[playerIter].hands[handIter], get_next_card(shoe));
+								players[playerIter].hands[handIter]->status |= 0x10;
+								reprint = 1;
+							} else
 							puts("Not enough money to double down");
 
+						}
 					}
+
+					if (reprint) {
+						printf("Player %ld's hand: ", playerIter + 1);
+						print_hand(players[playerIter].hands[handIter]);	
+						reprint = 0;
+					}
+					//printf("Status: %2.2x\n",players[playerIter].hands[0]->status);
 				}
-				if (reprint) {
-					printf("Player %ld's hand: ", iter + 1);
-					print_hand(players[iter].hand);	
-					reprint = 0;
-				}
-				printf("Status: %2.2x\n",players[iter].hand->status);
-			}
 			
-			if ((players[iter].hand->status & 0x02) && players[iter].hand->count == 2) {
-				puts("Blackjack!");
-				players[iter].money += players[iter].hand->wager * 2.5;
-				clean_hand(players[iter].hand);
-			} else if (players[iter].hand->status & 0x01) {
-				puts("Busted!");
-				clean_hand(players[iter].hand);
+				if ((players[playerIter].hands[handIter]->status & 0x02) && players[playerIter].hands[handIter]->count == 2) {
+					puts("Blackjack!");
+					players[playerIter].money += players[playerIter].hands[handIter]->wager * 2.5;
+					clean_hand(players[playerIter].hands[handIter]);
+				} else if (players[playerIter].hands[handIter]->status & 0x01) {
+					puts("Busted!");
+					clean_hand(players[playerIter].hands[handIter]);
+				}
+				puts("");
 			}
-			puts("");
 		}
 
 		// Dealer plays	
 		printf("Dealer's hand: ");
 		print_hand(dealerHand);
-		while (!(dealerHand->status & 0x03) && dealerHand->count < 17) {
+		
+		roundOver = 0;
+		for (playerIter = 0; playerIter < numPlayers; playerIter++) {
+			for ( handIter = 0; handIter < players[playerIter].numHands; handIter++)
+				roundOver |= players[playerIter].hands[handIter]->status;
+		}
+
+		while (!(dealerHand->status & 0x03) && dealerHand->count < 17 && roundOver) {
 			add_card(dealerHand, get_next_card(shoe));
 			printf("Dealer's hand: ");
 			print_hand(dealerHand);
-			printf("Status: %2.2x\n",dealerHand->status);
+			//printf("Status: %2.2x\n",dealerHand->status);
 		}
 		puts("");
 
 		
 		// Evaluate Player winning or losing versus Dealer
-		for (iter = 0; iter < numPlayers; iter++) {
-			if (players[iter].hand->status != 0) {
-				printf("player: %ld dealer: %ld\n", players[iter].hand->count, dealerHand->count);
-				if (players[iter].hand->count == dealerHand->count)
-					players[iter].money += players[iter].hand->wager;
-				else if (players[iter].hand->count > dealerHand->count || (dealerHand->status &= 0x01))
-					players[iter].money += players[iter].hand->wager * 2;
-				clean_hand(players[iter].hand);
-				puts("");
+		for (playerIter = 0; playerIter < numPlayers; playerIter++) {
+			for (handIter = 0; handIter < players[playerIter].numHands; handIter++) {
+				if (players[playerIter].hands[0]->status != 0) {
+					printf("player: %ld dealer: %ld\n", players[playerIter].hands[handIter]->count, dealerHand->count);
+					if (players[playerIter].hands[handIter]->count == dealerHand->count)
+						players[playerIter].money += players[playerIter].hands[handIter]->wager;
+					else if (players[playerIter].hands[handIter]->count > dealerHand->count || (dealerHand->status &= 0x01))
+						players[playerIter].money += players[playerIter].hands[handIter]->wager * 2;
+					clean_hand(players[playerIter].hands[handIter]);
+					puts("");
+				}
 			}
 		}
 		clean_hand(dealerHand);
 		
 	}
 	
-	for (iter = 0; iter < numPlayers; iter++)
-		destroy_hand(players[iter].hand);
+	for (playerIter = 0; playerIter < numPlayers; playerIter++) {
+		for (handIter = 0; handIter < maxHands; handIter++)
+			destroy_hand(players[playerIter].hands[handIter]);
+	}
 	
 	destroy_shoe(shoe);
 }

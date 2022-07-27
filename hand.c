@@ -67,7 +67,8 @@ void add_card(Hand *h, Card *card) {
 		h->status |= 0x04;
 
 	if (h->count > 21) {
-		for(; h->aces > 0; h->aces--) {
+		while (h->aces > 0) {
+			h->aces--;
 			h->count -= 10;
 			if (h->count == 21) {
 				h->status |= 0x02;
@@ -83,7 +84,7 @@ void add_card(Hand *h, Card *card) {
 	}
 	
 	if (h->hand_size == 2)
-		h->status |= 0x08;
+		h->status |= 0x28;
 }
 
 void print_hand(Hand *h) {

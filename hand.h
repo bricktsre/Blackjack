@@ -15,6 +15,7 @@
  * splittable	bit 2
  * double down	bit 3
  * stand	bit 4
+ * surrender	bit 5
  */
 
 typedef struct {

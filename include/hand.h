@@ -36,6 +36,8 @@ void clean_hand(Hand *h);
 
 void add_card(Hand *h, Card *card);
 
+Card* remove_card(Hand *h);
+
 void print_hand(Hand *h);
 
 void print_dealer_hand(Hand *h);

@@ -87,6 +87,15 @@ void add_card(Hand *h, Card *card) {
 		h->status |= 0x28;
 }
 
+Card * remove_card(Hand *h) {
+	Card* c = h->hand[h->hand_size - 1];
+	h->hand_size--;
+	h->hand[h->hand_size] = NULL;
+	h->count = h->hand[0]->value;
+	h->aces = h->hand[0]->value == 11 ? 1 : 0;
+	return c;
+}
+
 void print_hand(Hand *h) {
 	if (h->hand_size == 0)
 		return;

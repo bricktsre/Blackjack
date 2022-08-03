@@ -14,6 +14,7 @@
 typedef struct {
 	Hand  *hands[4];
 	size_t numHands;
+	size_t initialWager;
 	float  money;
 }Player;
 
@@ -33,6 +34,7 @@ int main(int argc, char *argv[]) {
 		for(handIter = 0; handIter < maxHands; handIter++) 
 			players[playerIter].hands[handIter] = create_hand();
 		players[playerIter].numHands = 1;
+		players[playerIter].initialWager = 0;
 		players[playerIter].money = 100;
 	}
 
@@ -44,8 +46,18 @@ int main(int argc, char *argv[]) {
 	puts("Welcome to Blackjack!\n");	
 	while (get_penetration(shoe) >= 0.2) {
 		for (playerIter = 0; playerIter < numPlayers; playerIter++) {
-			printf("Player %ld's money: %.2f\n", playerIter + 1, players[playerIter].money);
-			puts("How much would you like to bet?");
+			Player* player = &(players[playerIter]);
+			if (player->initialWager != 0) {
+				if (player->initialWager > player->money)
+					puts("Not enough money to rebet");
+				else {
+					printf("Player %ld's bet: %ld\n", playerIter + 1, player->initialWager);
+					player->hands[0]->wager += player->initialWager;
+					players->money -= player->initialWager;
+					continue;
+				}	
+			}
+			printf("Player %ld's money: %.2f\nHow much would you like to bet\n", playerIter + 1, players[playerIter].money);
 			while (1) {
 				if (fgets(playerInput, PLAYER_INPUT_SIZE-1, stdin) != NULL) {
 					int pWager = 0;
@@ -61,6 +73,7 @@ int main(int argc, char *argv[]) {
 					else {
 						players[playerIter].hands[0]->wager += pWager;
 						players[playerIter].money -= pWager;
+						players[playerIter].initialWager = pWager;
 						break;
 					}
 				}
@@ -84,7 +97,7 @@ int main(int argc, char *argv[]) {
 			//printf("Status: %2.2x\n",players[playerIter].hands[0]->status);
 		}
 		
-		if (dealerHand->hand[0]->value == 11) {
+		if (dealerHand->hand[0]->value == 11 || dealerHand->hand[0]->value == 10) {
 			// Insurance and Even money
 			if (dealerHand->count == 21) {
 				for (playerIter = 0; playerIter < numPlayers; playerIter++) {
@@ -200,19 +213,39 @@ int main(int argc, char *argv[]) {
 		
 		// Evaluate Player winning or losing versus Dealer
 		for (playerIter = 0; playerIter < numPlayers; playerIter++) {
-			for (handIter = 0; handIter < players[playerIter].numHands; handIter++) {
-				if (players[playerIter].hands[0]->status != 0) {
-					printf("player: %ld dealer: %ld\n", players[playerIter].hands[handIter]->count, dealerHand->count);
-					if (players[playerIter].hands[handIter]->count == dealerHand->count)
-						players[playerIter].money += players[playerIter].hands[handIter]->wager;
-					else if (players[playerIter].hands[handIter]->count > dealerHand->count || (dealerHand->status &= 0x01))
-						players[playerIter].money += players[playerIter].hands[handIter]->wager * 2;
+			Player* player = &(players[playerIter]);
+			for (handIter = 0; handIter < player->numHands; handIter++) {
+				Hand *hand = player->hands[handIter];
+				if (hand->status != 0) {
+					if (player->numHands == 1)
+						printf("player: %ld dealer: %ld\n", hand->count, dealerHand->count);
+					else
+						printf("Player %ld's hand %ld: %ld dealer: %ld\n", playerIter + 1, handIter + 1, hand->count, dealerHand->count);
+					
+					if (hand->count == dealerHand->count) {
+						players->money += hand->wager;
+						puts("It's a push");
+					} else if (hand->count > dealerHand->count || (dealerHand->status &= 0x01)) {
+						players->money += hand->wager * 2;
+						printf("Player %ld won %ld\n", playerIter + 1, hand->wager);
+					} else
+						puts("You lost");
 					clean_hand(players[playerIter].hands[handIter]);
 					puts("");
 				}
 			}
 		}
 		clean_hand(dealerHand);
+		
+		for (playerIter = 0; playerIter < numPlayers; playerIter++) {
+			printf("Player %ld money: %.2f\nRebet and deal or (C)hange bet\n", playerIter + 1, players[playerIter].money);
+			memset(playerInput, 0, sizeof(playerInput));
+			if (fgets(playerInput, PLAYER_INPUT_SIZE-1, stdin) != NULL) {
+				char c = playerInput[0];
+				if (c == 'C' || c == 'c')
+					players[playerIter].initialWager = 0;
+			}
+		}
 		
 	}
 	

@@ -27,6 +27,19 @@ int main(int argc, char *argv[]) {
 	Shoe* shoe = create_shoe(2);
 	shuffle_shoe(shoe);
 
+	/*shoe->cards[0].value = 5;
+	shoe->cards[1].value = 7;
+	shoe->cards[2].value = 10;
+	shoe->cards[3].value = 10;
+	shoe->cards[4].value = 10;
+	shoe->cards[5].value = 10;
+	shoe->cards[6].value = 3;
+	shoe->cards[7].value = 4;
+	shoe->cards[8].value = 5;
+	shoe->cards[9].value = 6;
+	shoe->cards[10].value = 7;
+	*/
+
 	size_t numPlayers = 1;
 	size_t maxHands = 4;	
 	Player players[numPlayers];
@@ -57,8 +70,9 @@ int main(int argc, char *argv[]) {
 					continue;
 				}	
 			}
-			printf("Player %ld's money: %.2f\nHow much would you like to bet\n", playerIter + 1, players[playerIter].money);
+			printf("Player %ld's money: %.2f\n", playerIter + 1, players[playerIter].money);
 			while (1) {
+				printf("How much would you like to bet? ");
 				if (fgets(playerInput, PLAYER_INPUT_SIZE-1, stdin) != NULL) {
 					int pWager = 0;
 					if (sscanf(playerInput, "%d", &pWager) != 1) {
@@ -68,12 +82,12 @@ int main(int argc, char *argv[]) {
 					
 					if (pWager < 0 || (pWager % 5 != 0))
 						puts("Wager must be a multiple of 5");
-					else if (pWager > players[playerIter].money)
+					else if (pWager > player->money)
 						puts("Can't bet more than you have!");
 					else {
-						players[playerIter].hands[0]->wager += pWager;
-						players[playerIter].money -= pWager;
-						players[playerIter].initialWager = pWager;
+						player->hands[0]->wager += pWager;
+						player->money -= pWager;
+						player->initialWager = pWager;
 						break;
 					}
 				}
@@ -122,13 +136,13 @@ int main(int argc, char *argv[]) {
 
 				while (!(players[playerIter].hands[handIter]->status & 0x13)) {
 					if (players[playerIter].hands[handIter]->status == 0)
-						puts("(H)it or (S)tand?");
+						printf("(H)it or (S)tand? ");
 					else {
 						printf("(H)it, (S)tand, ");
 						if (players[playerIter].hands[handIter]->status & 0x04)
-							puts("(D)ouble down, S(p)lit, or S(u)rrender?");
+							printf("(D)ouble down, S(p)lit, or S(u)rrender? ");
 						else if (players[playerIter].hands[handIter]->status & 0x28)
-							puts("(D)ouble down, or S(u)rrender?");
+							printf("(D)ouble down, or S(u)rrender? ");
 					}
 
 					memset(playerInput, 0, sizeof(playerInput));
@@ -162,8 +176,8 @@ int main(int argc, char *argv[]) {
 								players[playerIter].hands[players[playerIter].numHands]->wager = players[playerIter].hands[handIter]->wager;
 
 								add_card(players[playerIter].hands[players[playerIter].numHands], remove_card(players[playerIter].hands[handIter]));
-								add_card(players[playerIter].hands[players[playerIter].numHands], get_next_card(shoe));
 								add_card(players[playerIter].hands[handIter], get_next_card(shoe));
+								add_card(players[playerIter].hands[players[playerIter].numHands], get_next_card(shoe));
 								
 								players[playerIter].numHands++;
 								printf("Player %ld's hand: ", playerIter + 1);
@@ -218,7 +232,7 @@ int main(int argc, char *argv[]) {
 				Hand *hand = player->hands[handIter];
 				if (hand->status != 0) {
 					if (player->numHands == 1)
-						printf("player: %ld dealer: %ld\n", hand->count, dealerHand->count);
+						printf("dealer: %ld player: %ld\n", dealerHand->count, hand->count);
 					else
 						printf("Player %ld's hand %ld: %ld dealer: %ld\n", playerIter + 1, handIter + 1, hand->count, dealerHand->count);
 					
@@ -238,7 +252,7 @@ int main(int argc, char *argv[]) {
 		clean_hand(dealerHand);
 		
 		for (playerIter = 0; playerIter < numPlayers; playerIter++) {
-			printf("Player %ld money: %.2f\nRebet and deal or (C)hange bet\n", playerIter + 1, players[playerIter].money);
+			printf("Player %ld money: %.2f\nRebet and deal or (C)hange bet ", playerIter + 1, players[playerIter].money);
 			memset(playerInput, 0, sizeof(playerInput));
 			if (fgets(playerInput, PLAYER_INPUT_SIZE-1, stdin) != NULL) {
 				char c = playerInput[0];

@@ -12,12 +12,12 @@ CP = -Wall -pedantic
 CFLAGS = -I$(IDIR)
 
 # header dependencies
-_DEPS = common.h card.h hand.h shoe.h
+_DEPS = common.h card.h hand.h shoe.h player.h
 DEPS = $(patsubst %,$(IDIR)/$(_DEPS))
 
 # object files
 ODIR = $(SRCDIR)/obj
-_OBJ = card.o hand.o shoe.o
+_OBJ = card.o hand.o shoe.o player.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 all: blackjack

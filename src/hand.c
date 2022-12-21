@@ -87,7 +87,7 @@ void add_card(Hand *h, Card *card) {
 		h->status |= 0x28;
 }
 
-Card * remove_card(Hand *h) {
+Card* remove_card(Hand *h) {
 	Card* c = h->hand[h->hand_size - 1];
 	h->hand_size--;
 	h->hand[h->hand_size] = NULL;

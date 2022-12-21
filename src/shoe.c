@@ -55,6 +55,7 @@ void shuffle_shoe(Shoe *s) {
 		s->cards[j] = temp;
 	}
 	s->next_card = 0;
+	s->curr_size = s->orig_size;
 }
 
 Card* get_next_card(Shoe *s) {

@@ -35,6 +35,16 @@ Shoe* create_shoe(uint32_t num_decks) {
 			else
 				sprintf(s->cards[i].name, "%s", "K");
 		}
+		int k = ((i * 4) / 52) % 4; 
+		
+		if (k == 0)
+			sprintf(s->cards[i].suit, "%s", "diamonds");
+		else if (k == 1)
+			sprintf(s->cards[i].suit, "%s", "clubs");
+		else if (k == 2)
+			sprintf(s->cards[i].suit, "%s", "hearts");
+		else	
+			sprintf(s->cards[i].suit, "%s", "spades");
 	}
 
 	return s;

@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 	
 	srand(time(0));
 
-	Shoe* shoe = create_shoe(2);
+	Shoe* shoe = create_shoe(1);
 	shuffle_shoe(shoe);
 
 	/*shoe->cards[0].value = 7;
@@ -190,8 +190,16 @@ int main(int argc, char *argv[]) {
 			break;
 		}
 
-		if (get_penetration(shoe) < 0.2)
+		if (get_penetration(shoe) < 0.2) {
+	//int i;
+	//for(i=0;i<52;i++)
+	//	printf("%s %s\n", shoe->cards[i].name, shoe->cards[i].suit);
 			shuffle_shoe(shoe);
+		
+	//puts("");
+	//		for(i=0;i<52;i++)
+	//	printf("%s %s\n", shoe->cards[i].name, shoe->cards[i].suit);
+		}
 	}
 	
 	for (playerIter = 0; playerIter < numPlayers; playerIter++) {

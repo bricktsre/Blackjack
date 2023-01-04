@@ -6,6 +6,7 @@
 typedef struct {
 	uint8_t  value;
 	char     name[10];
+	char	 suit[10];
 }Card;
 
 void print_card(Card c);
